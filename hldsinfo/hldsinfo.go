@@ -159,146 +159,153 @@ func Get(address string, deadline time.Time) (*Info, error) {
 	}
 
 	info := new(Info)
-	var buf buffer
-	buf.data = make([]byte, 1024)
 
 	conn.SetReadDeadline(deadline)
-	n, err := conn.Read(buf.data)
-	if err != nil {
-		return nil, err
-	}
-	buf.data = buf.data[:n]
-
-	var header uint32
-	header, err = buf.readUInt32()
-	if err != nil {
-		return nil, err
-	}
-	if header != ^uint32(0) {
-		return nil, ErrUnexpectedResponse
-	}
-
-	info.Header, err = buf.readByte()
-	if err != nil {
-		return nil, err
-	}
-	if info.Header != 0x49 {
-		return nil, ErrUnexpectedResponse
-	}
-
-	info.Protocol, err = buf.readByte()
-	if err != nil {
-		return nil, err
-	}
-
-	info.Name, err = buf.readString()
-	if err != nil {
-		return nil, err
-	}
-
-	info.Map, err = buf.readString()
-	if err != nil {
-		return nil, err
-	}
-
-	info.Folder, err = buf.readString()
-	if err != nil {
-		return nil, err
-	}
-
-	info.Game, err = buf.readString()
-	if err != nil {
-		return nil, err
-	}
-
-	info.ID, err = buf.readUInt16()
-	if err != nil {
-		return nil, err
-	}
-
-	info.Players, err = buf.readByte()
-	if err != nil {
-		return nil, err
-	}
-
-	info.MaxPlayers, err = buf.readByte()
-	if err != nil {
-		return nil, err
-	}
-
-	info.Bots, err = buf.readByte()
-	if err != nil {
-		return nil, err
-	}
-
-	info.ServerType, err = buf.readChar()
-	if err != nil {
-		return nil, err
-	}
-
-	info.Environment, err = buf.readChar()
-	if err != nil {
-		return nil, err
-	}
-
-	info.Visibility, err = buf.readByte()
-	if err != nil {
-		return nil, err
-	}
-
-	info.VAC, err = buf.readByte()
-	if err != nil {
-		return nil, err
-	}
-
-	info.Version, err = buf.readString()
-	if err != nil {
-		return nil, err
-	}
-
-	info.EDF, err = buf.readByte()
-	if err != nil {
-		return nil, err
-	}
-
-	if info.EDF&0x80 != 0 {
-		info.ExtraData.Port, err = buf.readUInt16()
+	for i := 0; i < 2; i++ {
+		var buf buffer
+		buf.data = make([]byte, 1024)
+		n, err := conn.Read(buf.data)
 		if err != nil {
 			return nil, err
 		}
-	}
+		buf.data = buf.data[:n]
 
-	if info.EDF&0x10 != 0 {
-		info.ExtraData.SteamID, err = buf.readUInt64()
+		var header uint32
+		header, err = buf.readUInt32()
 		if err != nil {
 			return nil, err
 		}
-	}
+		if header != ^uint32(0) {
+			return nil, ErrUnexpectedResponse
+		}
 
-	if info.EDF&0x40 != 0 {
-		info.ExtraData.SourceTVPort, err = buf.readUInt16()
+		info.Header, err = buf.readByte()
 		if err != nil {
 			return nil, err
 		}
-		info.ExtraData.SourceTVName, err = buf.readString()
+		if info.Header == 0x6d {
+			continue // old format received, next should be new one
+		}
+		if info.Header != 0x49 {
+			return nil, ErrUnexpectedResponse
+		}
+
+		info.Protocol, err = buf.readByte()
 		if err != nil {
 			return nil, err
 		}
-	}
 
-	if info.EDF&0x20 != 0 {
-		info.ExtraData.Keywords, err = buf.readString()
+		info.Name, err = buf.readString()
 		if err != nil {
 			return nil, err
 		}
-	}
 
-	if info.EDF&0x01 != 0 {
-		info.ExtraData.GameID, err = buf.readUInt64()
+		info.Map, err = buf.readString()
 		if err != nil {
 			return nil, err
 		}
+
+		info.Folder, err = buf.readString()
+		if err != nil {
+			return nil, err
+		}
+
+		info.Game, err = buf.readString()
+		if err != nil {
+			return nil, err
+		}
+
+		info.ID, err = buf.readUInt16()
+		if err != nil {
+			return nil, err
+		}
+
+		info.Players, err = buf.readByte()
+		if err != nil {
+			return nil, err
+		}
+
+		info.MaxPlayers, err = buf.readByte()
+		if err != nil {
+			return nil, err
+		}
+
+		info.Bots, err = buf.readByte()
+		if err != nil {
+			return nil, err
+		}
+
+		info.ServerType, err = buf.readChar()
+		if err != nil {
+			return nil, err
+		}
+
+		info.Environment, err = buf.readChar()
+		if err != nil {
+			return nil, err
+		}
+
+		info.Visibility, err = buf.readByte()
+		if err != nil {
+			return nil, err
+		}
+
+		info.VAC, err = buf.readByte()
+		if err != nil {
+			return nil, err
+		}
+
+		info.Version, err = buf.readString()
+		if err != nil {
+			return nil, err
+		}
+
+		info.EDF, err = buf.readByte()
+		if err != nil {
+			return nil, err
+		}
+
+		if info.EDF&0x80 != 0 {
+			info.ExtraData.Port, err = buf.readUInt16()
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		if info.EDF&0x10 != 0 {
+			info.ExtraData.SteamID, err = buf.readUInt64()
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		if info.EDF&0x40 != 0 {
+			info.ExtraData.SourceTVPort, err = buf.readUInt16()
+			if err != nil {
+				return nil, err
+			}
+			info.ExtraData.SourceTVName, err = buf.readString()
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		if info.EDF&0x20 != 0 {
+			info.ExtraData.Keywords, err = buf.readString()
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		if info.EDF&0x01 != 0 {
+			info.ExtraData.GameID, err = buf.readUInt64()
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		return info, nil
 	}
 
-	return info, nil
+	return nil, ErrUnexpectedResponse
 }

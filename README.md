@@ -11,3 +11,5 @@ if err != nil {
 }
 fmt.Println(info.Name) // prints server name
 ```
+
+For example of `Fetcher` see cmd/main.go.
