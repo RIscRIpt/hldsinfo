@@ -22,6 +22,7 @@ type InfoExtra struct {
 
 // Info contains information about the server
 type Info struct {
+	Address     string    `json:"address"`
 	Header      byte      `json:"-"`
 	Protocol    byte      `json:"protocol"`
 	Name        string    `json:"name"`
@@ -159,6 +160,7 @@ func Get(address string, deadline time.Time) (*Info, error) {
 	}
 
 	info := new(Info)
+	info.Address = address
 
 	conn.SetReadDeadline(deadline)
 	for i := 0; i < 2; i++ {
